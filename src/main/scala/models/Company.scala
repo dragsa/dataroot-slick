@@ -32,14 +32,14 @@ class CompanyRepository(implicit db: Database) {
     db.run(companyTableQuery returning companyTableQuery ++= companies)
   }
 
-  def update(company: Company): Future[Int] = {
+  def updateOne(company: Company): Future[Int] = {
     db.run(
       companyTableQuery
         .filter(_.companyId === company.companyId)
         .update(company))
   }
 
-  def delete(companyId: Int): Future[Int] = {
+  def deleteOne(companyId: Int): Future[Int] = {
     db.run(companyTableQuery.filter(_.companyId === companyId).delete)
   }
 

@@ -33,6 +33,5 @@ object EntryPoint {
   def main(args: Array[String]): Unit = {
     initTable()
     fillTablesWithData()
-
   }
 }

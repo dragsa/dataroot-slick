@@ -19,7 +19,7 @@ final class TripTable(tag: Tag) extends Table[Trip](tag, "trip") {
   val tripNumber = column[Int]("trip_no", O.PrimaryKey)
   val companyId = column[Int]("ID_comp")
   val plane = column[String]("plane")
-  // TODO from <> to constraint here?
+  // TODO from <> to constraint here instead of insert checks?
   val townFrom = column[String]("town_from")
   val townTo = column[String]("town_to")
   val timeOut = column[Timestamp]("time_out")
@@ -70,6 +70,8 @@ class TripRepository(implicit db: Database) {
   val tripTableQuery = TripTable.table
   val passInTripTableQuery = PassengerInTripTable.table
 
+  def validaTripPredicate(a: Trip) = !(a.townFrom equals a.townTo)
+
   def createOne(trip: Trip): Future[Trip] = {
     db.run(tripTableQuery returning tripTableQuery += trip)
   }
@@ -79,7 +81,7 @@ class TripRepository(implicit db: Database) {
                  passengerIds: Seq[Int],
                  passInTrips: List[PassengerInTrip]): Future[Seq[Trip]] = {
     val query = (tripTableQuery returning tripTableQuery ++= trips.filter(a =>
-      companiesIds.contains(a.companyId)))
+      validaTripPredicate(a) && companiesIds.contains(a.companyId)))
       .flatMap { insertedTrips =>
         (passInTripTableQuery ++= passInTrips.filter(
           a =>
@@ -92,11 +94,11 @@ class TripRepository(implicit db: Database) {
     db.run(query)
   }
 
-  def update(trip: Trip): Future[Int] = {
+  def updateOne(trip: Trip): Future[Int] = {
     db.run(tripTableQuery.filter(_.tripNumber === trip.tripNumber).update(trip))
   }
 
-  def delete(tripNumber: Int): Future[Int] = {
+  def deleteOne(tripNumber: Int): Future[Int] = {
     db.run(tripTableQuery.filter(_.tripNumber === tripNumber).delete)
   }
 

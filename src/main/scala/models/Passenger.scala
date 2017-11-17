@@ -33,14 +33,14 @@ class PassengerRepository(implicit db: Database) {
     db.run(passengerTableQuery returning passengerTableQuery ++= passengers)
   }
 
-  def update(passenger: Passenger): Future[Int] = {
+  def updateOne(passenger: Passenger): Future[Int] = {
     db.run(
       passengerTableQuery
         .filter(_.passengerId === passenger.passengerId)
         .update(passenger))
   }
 
-  def delete(passengerId: Int): Future[Int] = {
+  def deleteOne(passengerId: Int): Future[Int] = {
     db.run(passengerTableQuery.filter(_.passengerId === passengerId).delete)
   }
 
