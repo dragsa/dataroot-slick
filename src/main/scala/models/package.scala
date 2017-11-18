@@ -9,6 +9,10 @@ package object models {
     Timestamp.valueOf(LocalDateTime.parse(str, formatter))
   }
 
+  implicit def timestampToStringConverter(stamp: Timestamp) = {
+    stamp.toString
+  }
+
   def inputDataConverterCompany(input: String) = {
     trimmer(input)
       .map { case List(x1, x2) => (x1, x2) }
