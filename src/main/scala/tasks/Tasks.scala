@@ -2,7 +2,6 @@ package tasks
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 import models._
 import slick.jdbc.PostgresProfile.api._
 
@@ -44,20 +43,28 @@ object Tasks extends App {
     ???
   }
 
-  // TODO
   def query72 = {
     val subQuery72 =
       (repoTrip.tripTableQuery join repoTrip.passInTripTableQuery on (_.tripNumber === _.tripNumber))
         .map { case (t, p) => (t.companyId, p.passengerId) }
-        .groupBy(companyPassToken => (companyPassToken._1, companyPassToken._2))
-        .map { case (key, rows) => (key._1, key._2) -> rows.length }
-        .sortBy(a => (a._1._1.desc, a._1._2.desc))
-    println(subQuery72.result.statements.mkString)
-    subQuery72
+        .sortBy(a => (a._2.desc, a._1.desc))
+        .groupBy(companyPassToken => companyPassToken._2)
+        .map {
+          case (key, rows) =>
+            (key, rows.length, rows.map(_._1).avg, rows.map(_._1).max)
+        }
+        .filter {
+          case (_, _, avgCompany, maxCompany) => avgCompany === maxCompany
+        }
+        .map { case (pass, tripsNum, _, _) => (pass, tripsNum) }
+        .sortBy { case (pass, tripsNum) => (pass.desc, tripsNum.desc) }
+    (for {
+      p <- repoPass.passengerTableQuery
+      luckyPassenger <- subQuery72 if p.passengerId === luckyPassenger._1
+    } yield (p, luckyPassenger))
+      .map { case (pass, subSelect) => (pass.passengerName, subSelect._2) }
   }
 
-  // TODO
-  // confusing, what should we return if there are several max days?
   def query77 = {
     (for {
       pit <- repoTrip.passInTripTableQuery
@@ -72,12 +79,32 @@ object Tasks extends App {
       .sortBy(a => (a._1.desc, a._2.asc))
   }
 
+  // TODO
   def query79 = {
-    (repoTrip.passInTripTableQuery join repoTrip.tripTableQuery on (_.tripNumber === _.tripNumber))
-      .groupBy{ case (pit, t) => pit.passengerId}
-      .map { case (key, rows) => key -> rows.map(row => 4).sum}
+//    (repoTrip.passInTripTableQuery join repoTrip.tripTableQuery on (_.tripNumber === _.tripNumber))
+//      .groupBy { case (pit, t) => pit.passengerId }
+//      .map { case (key, rows) => key -> rows.map(row => row._2.timeIn.asInstanceOf[Int] -- row._2.timeOut.asInstanceOf[Int]).max }
 
   }
 
-  println(exec(query72.result).foreach(println(_)))
+  // TODO
+  def query84 = {
+    ???
+  }
+
+//  // for 72, special treatment
+//  println({
+//    val result = exec(query72.result)
+//    val resultDecapitated = result.head
+//    result.takeWhile(a => a._2 == resultDecapitated._2)
+//  }.foreach(println(_)))
+
+//  // for 77, special treatment
+//  println({
+//    val result = exec(query77.result)
+//    val resultDecapitated = result.head
+//    result.takeWhile(a => a._1 == resultDecapitated._1)
+//  }.foreach(println(_)))
+
+  println(exec(query77.result).foreach(println(_)))
 }
