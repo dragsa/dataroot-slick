@@ -24,6 +24,17 @@ object Tasks extends App {
     repoPass.passengerTableQuery
       .filter(_.passengerId in subQuery63)
       .map(_.passengerName)
+
+////    alternatively we can use flatMap like below. but for what reason?
+//    repoTrip.passInTripTableQuery
+//      .groupBy(pit => (pit.passengerId, pit.place))
+//      .map { case (key, rows) => key._1 -> rows.length }
+//      .filter(_._2 >= 2)
+//      .map { case (id, _) => id }
+//      .flatMap(a =>
+//        repoPass.passengerTableQuery
+//          .filter(_.passengerId === a)
+//          .map(_.passengerName))
   }
 
   def query67 = {
@@ -44,7 +55,7 @@ object Tasks extends App {
   }
 
   def query72 = {
-    val subQuery72 =
+    val tripWithPassInTripJoined =
       (repoTrip.tripTableQuery join repoTrip.passInTripTableQuery on (_.tripNumber === _.tripNumber))
         .map { case (t, p) => (t.companyId, p.passengerId) }
         .sortBy(a => (a._2.desc, a._1.desc))
@@ -60,7 +71,7 @@ object Tasks extends App {
         .sortBy { case (pass, tripsNum) => (pass.desc, tripsNum.desc) }
     (for {
       p <- repoPass.passengerTableQuery
-      luckyPassenger <- subQuery72 if p.passengerId === luckyPassenger._1
+      luckyPassenger <- tripWithPassInTripJoined if p.passengerId === luckyPassenger._1
     } yield (p, luckyPassenger))
       .map { case (pass, subSelect) => (pass.passengerName, subSelect._2) }
   }
@@ -189,7 +200,7 @@ object Tasks extends App {
 
     val totalPassengers = tripPassJoin
       .groupBy { case (id, _, trip, date, _) => (id, trip, date) }
-      .map { case (key, rows) => (key._1,rows.length) }
+      .map { case (key, rows) => (key._1, rows.length) }
       .groupBy { case (id, _) => id }
       .map { case (key, rows) => key -> rows.map(_._2).sum }
 
@@ -225,5 +236,10 @@ object Tasks extends App {
 //    result.takeWhile(a => a._2 == resultDecapitated._2)
 //  }.foreach(println(_)))
 
-  println(exec(query95.result).foreach(println(_)))
+  println(exec({
+    val queryToExecute = query72.result
+    println("query:\n" + queryToExecute.statements.mkString)
+    println("result:")
+    queryToExecute
+  }).foreach(println(_)))
 }
