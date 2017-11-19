@@ -2,7 +2,6 @@ package models
 
 import slick.lifted.Tag
 import slick.jdbc.PostgresProfile.api._
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class Passenger(passengerId: Int, passengerName: String)
